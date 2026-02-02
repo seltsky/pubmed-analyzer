@@ -242,6 +242,33 @@ main {
     color: #92400e;
 }
 
+/* IR Badge */
+.paper-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.ir-badge {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    animation: irPulse 2s ease-in-out infinite;
+}
+
+@keyframes irPulse {
+    0%, 100% { box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3); }
+    50% { box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5); }
+}
+
 /* Papers List */
 .papers-list {
     display: flex;

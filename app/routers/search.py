@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Literal
 from app.services.pubmed import search_pubmed, fetch_paper_details, get_paper_by_pmid
-from app.services.ai_summary import generate_search_query
+from app.services.ai_summary import generate_search_query, detect_ir_related_papers
 from app.services.icite import fetch_citation_counts
 from app.models.schemas import SearchResponse, Paper
 
@@ -45,11 +45,17 @@ async def search_papers(
 
         papers = await fetch_paper_details(pmids) if pmids else []
 
-        # 피인용 횟수 가져오기
+        # 피인용 횟수 가져오기 + IR 관련 감지 (병렬 실행)
         if papers:
-            citation_counts = await fetch_citation_counts([p.pmid for p in papers])
+            import asyncio
+            citation_task = fetch_citation_counts([p.pmid for p in papers])
+            ir_task = detect_ir_related_papers(papers)
+
+            citation_counts, ir_results = await asyncio.gather(citation_task, ir_task)
+
             for paper in papers:
                 paper.citation_count = citation_counts.get(paper.pmid, 0)
+                paper.is_ir_related = ir_results.get(paper.pmid, False)
 
         # 피인용순 정렬 (서버 측 정렬)
         if sort_by == "citations":

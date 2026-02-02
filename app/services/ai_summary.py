@@ -2,6 +2,7 @@ from groq import AsyncGroq
 from app.config import GROQ_API_KEY
 from app.models.schemas import Paper
 from typing import Optional
+import json
 
 
 # 전문분야별 프롬프트 설정
@@ -297,3 +298,65 @@ KEYWORDS: lung cancer, CT, diagnosis, imaging"""
         result["pubmed_query"] = natural_query
 
     return result
+
+
+async def detect_ir_related_papers(papers: list[Paper]) -> dict[str, bool]:
+    """AI를 사용하여 논문이 인터벤션 영상의학과와 관련있는지 판단합니다."""
+
+    if not GROQ_API_KEY or not papers:
+        return {}
+
+    client = AsyncGroq(api_key=GROQ_API_KEY)
+
+    # 논문 정보를 간단히 정리
+    papers_info = []
+    for paper in papers[:20]:  # 최대 20개
+        papers_info.append({
+            "pmid": paper.pmid,
+            "title": paper.title,
+            "abstract": paper.abstract[:300] if paper.abstract else ""
+        })
+
+    papers_json = json.dumps(papers_info, ensure_ascii=False)
+
+    prompt = f"""당신은 인터벤션 영상의학과(Interventional Radiology) 전문가입니다.
+아래 논문들이 인터벤션 영상의학과와 관련이 있는지 판단해주세요.
+
+## IR 관련 주제 (이 중 하나라도 해당되면 관련있음):
+- 혈관 중재술: TACE, TARE, 혈관색전술, 스텐트, TIPS, 혈전제거술, 동맥류 치료
+- 비혈관 중재술: 경피적 배액술, 생검, 척추성형술, 신경차단술
+- 종양 치료: RFA, MWA, 냉동절제술, IRE
+- 영상 유도 시술: CT/US/형광투시 유도 시술
+- 혈관 접근: 카테터, 가이드와이어, 천자 기법
+- 중재적 종양학: 간암/신장암/폐암 등의 국소치료
+
+## 논문 목록:
+{papers_json}
+
+## 출력 형식 (반드시 JSON만 출력):
+{{"pmid1": true, "pmid2": false, ...}}
+
+true = IR 관련, false = IR 관련 아님"""
+
+    try:
+        response = await client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500,
+            temperature=0.1,
+        )
+
+        result_text = response.choices[0].message.content or "{}"
+
+        # JSON 파싱 시도
+        # JSON 부분만 추출
+        start = result_text.find("{")
+        end = result_text.rfind("}") + 1
+        if start != -1 and end > start:
+            json_str = result_text[start:end]
+            return json.loads(json_str)
+
+        return {}
+    except Exception as e:
+        print(f"IR 감지 오류: {e}")
+        return {}

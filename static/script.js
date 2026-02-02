@@ -160,6 +160,7 @@ function toggleBookmark(pmid) {
                 keywords: paper.keywords,
                 pmc_id: paper.pmc_id,
                 citation_count: paper.citation_count,
+                is_ir_related: paper.is_ir_related,
                 bookmarked_at: new Date().toISOString()
             });
             saveBookmarks(bookmarks);
@@ -547,8 +548,11 @@ function renderResults() {
                         ${selectedPmids.has(paper.pmid) ? 'checked' : ''}
                         onchange="togglePaper('${paper.pmid}')">
                     <div class="paper-content">
-                        <div class="paper-title" onclick="window.open('https://pubmed.ncbi.nlm.nih.gov/${paper.pmid}/', '_blank')">
-                            ${paper.title}
+                        <div class="paper-title-row">
+                            ${paper.is_ir_related ? '<span class="ir-badge">🩺 IR 관련</span>' : ''}
+                            <div class="paper-title" onclick="window.open('https://pubmed.ncbi.nlm.nih.gov/${paper.pmid}/', '_blank')">
+                                ${paper.title}
+                            </div>
                         </div>
                         <div class="paper-meta">
                             <strong>PMID:</strong> ${paper.pmid} |
