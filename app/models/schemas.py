@@ -12,6 +12,7 @@ class Paper(BaseModel):
     journal: str
     keywords: list[str] = []
     pmc_id: str | None = None  # PMC ID (무료 전문 PDF 제공 시)
+    citation_count: int | None = None  # 피인용 횟수 (iCite)
 
 
 class SearchRequest(BaseModel):

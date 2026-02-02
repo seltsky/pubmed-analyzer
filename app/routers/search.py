@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
 from app.services.pubmed import search_pubmed, fetch_paper_details, get_paper_by_pmid
 from app.services.ai_summary import generate_search_query
+from app.services.icite import fetch_citation_counts
 from app.models.schemas import SearchResponse, Paper
 
 
@@ -27,6 +28,7 @@ async def search_papers(
     end_date: Optional[str] = Query(None, description="종료 날짜 (YYYY)"),
     page: int = Query(1, ge=1, description="페이지 번호"),
     page_size: int = Query(20, ge=1, le=100, description="페이지당 결과 수"),
+    sort_by: str = Query("relevance", description="정렬 기준: relevance, date, citations"),
 ):
     """PubMed에서 논문을 검색합니다."""
 
@@ -38,9 +40,20 @@ async def search_papers(
             end_date=end_date,
             page=page,
             page_size=page_size,
+            sort_by=sort_by,
         )
 
         papers = await fetch_paper_details(pmids) if pmids else []
+
+        # 피인용 횟수 가져오기
+        if papers:
+            citation_counts = await fetch_citation_counts([p.pmid for p in papers])
+            for paper in papers:
+                paper.citation_count = citation_counts.get(paper.pmid, 0)
+
+        # 피인용순 정렬 (서버 측 정렬)
+        if sort_by == "citations":
+            papers.sort(key=lambda p: p.citation_count or 0, reverse=True)
 
         return SearchResponse(
             total=total,

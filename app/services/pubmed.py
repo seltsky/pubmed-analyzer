@@ -12,6 +12,7 @@ async def search_pubmed(
     end_date: Optional[str] = None,
     page: int = 1,
     page_size: int = 20,
+    sort_by: str = "relevance",
 ) -> tuple[int, list[str]]:
     """PubMed에서 논문을 검색하고 PMID 목록을 반환합니다."""
 
@@ -28,13 +29,19 @@ async def search_pubmed(
     elif end_date:
         search_term += f" AND 1900:{end_date}[dp]"
 
+    # PubMed 정렬 옵션 매핑
+    pubmed_sort = "relevance"
+    if sort_by == "date":
+        pubmed_sort = "pub_date"  # 최신순
+    # citations는 PubMed에서 지원하지 않으므로 클라이언트 측 정렬
+
     params = {
         "db": "pubmed",
         "term": search_term,
         "retmax": page_size,
         "retstart": (page - 1) * page_size,
         "retmode": "json",
-        "sort": "relevance",
+        "sort": pubmed_sort,
     }
 
     if NCBI_API_KEY:

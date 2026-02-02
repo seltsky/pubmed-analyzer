@@ -75,6 +75,14 @@
                     <button id="summarize-selected" class="btn btn-ai" disabled>선택한 논문 AI 요약</button>
                     <button id="chat-with-ai" class="btn btn-chat" disabled>💬 AI와 대화</button>
                 </div>
+                <div class="sort-controls">
+                    <label for="sort-by">정렬:</label>
+                    <select id="sort-by" class="sort-select">
+                        <option value="relevance">관련도순</option>
+                        <option value="date">최신순</option>
+                        <option value="citations">피인용순</option>
+                    </select>
+                </div>
                 <label>
                     <input type="checkbox" id="select-all"> 전체 선택
                 </label>

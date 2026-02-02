@@ -193,6 +193,53 @@ main {
     margin-bottom: 1rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #e0e0e0;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+/* Sort Controls */
+.sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sort-controls label {
+    font-size: 0.9rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.sort-select {
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.sort-select:focus {
+    outline: none;
+    border-color: #159895;
+}
+
+.sort-select:hover {
+    border-color: #c0c0c0;
+}
+
+/* Citation Count */
+.citation-count {
+    background: #fef3c7;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    color: #b45309;
+    font-size: 0.85rem;
+}
+
+.citation-count strong {
+    color: #92400e;
 }
 
 /* Papers List */

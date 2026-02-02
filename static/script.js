@@ -7,7 +7,8 @@ let currentSearch = {
     page: 1,
     page_size: 20,
     total: 0,
-    papers: []
+    papers: [],
+    sort_by: 'relevance'
 };
 
 let selectedPmids = new Set();
@@ -55,6 +56,7 @@ const bookmarksList = document.getElementById('bookmarks-list');
 const exportBookmarksBtn = document.getElementById('export-bookmarks');
 const summarizeBookmarksBtn = document.getElementById('summarize-bookmarks');
 const clearBookmarksBtn = document.getElementById('clear-bookmarks');
+const sortBySelect = document.getElementById('sort-by');
 
 // 초기화
 document.addEventListener('DOMContentLoaded', () => {
@@ -76,6 +78,7 @@ clearHistoryBtn.addEventListener('click', clearHistory);
 exportBookmarksBtn.addEventListener('click', exportBookmarksToCSV);
 summarizeBookmarksBtn.addEventListener('click', summarizeAllBookmarks);
 clearBookmarksBtn.addEventListener('click', clearAllBookmarks);
+sortBySelect.addEventListener('change', handleSortChange);
 
 // 모달 닫기 버튼
 document.querySelectorAll('.close-btn').forEach(btn => {
@@ -156,6 +159,7 @@ function toggleBookmark(pmid) {
                 abstract: paper.abstract,
                 keywords: paper.keywords,
                 pmc_id: paper.pmc_id,
+                citation_count: paper.citation_count,
                 bookmarked_at: new Date().toISOString()
             });
             saveBookmarks(bookmarks);
@@ -403,6 +407,14 @@ function openPDF(pmcId) {
     window.open(pdfUrl, '_blank');
 }
 
+// ==================== 정렬 기능 ====================
+
+async function handleSortChange() {
+    currentSearch.sort_by = sortBySelect.value;
+    currentSearch.page = 1; // 정렬 변경 시 첫 페이지로
+    await searchPapers();
+}
+
 // ==================== 검색 모드 토글 ====================
 
 function toggleSearchMode() {
@@ -497,7 +509,8 @@ async function searchPapers() {
         const params = new URLSearchParams({
             query: currentSearch.query,
             page: currentSearch.page,
-            page_size: currentSearch.page_size
+            page_size: currentSearch.page_size,
+            sort_by: currentSearch.sort_by
         });
 
         if (currentSearch.author) params.append('author', currentSearch.author);
@@ -540,7 +553,8 @@ function renderResults() {
                         <div class="paper-meta">
                             <strong>PMID:</strong> ${paper.pmid} |
                             <strong>저널:</strong> ${paper.journal || 'N/A'} |
-                            <strong>출판일:</strong> ${paper.pub_date || 'N/A'}
+                            <strong>출판일:</strong> ${paper.pub_date || 'N/A'} |
+                            <span class="citation-count" title="피인용 횟수">📊 인용: <strong>${paper.citation_count !== null ? paper.citation_count : '-'}</strong></span>
                         </div>
                         <div class="paper-meta">
                             <strong>저자:</strong> ${paper.authors.slice(0, 5).join(', ')}${paper.authors.length > 5 ? ' 외 ' + (paper.authors.length - 5) + '명' : ''}
