@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <section class="search-section">
+        <h1>PubMed 논문 검색</h1>
+        <div class="user-info">
+            🩺 인터벤션 영상의학과 전문의 모드 - 일반 요약 + IR 관점 인사이트 제공
+        </div>
+        <form id="search-form" class="search-form">
+            <div class="form-group">
+                <div class="search-mode-toggle">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="ai-search-mode" checked>
+                        <span class="toggle-text">🤖 AI 검색 모드</span>
+                        <span class="toggle-hint">(자연어로 검색 → AI가 키워드 변환)</span>
+                    </label>
+                </div>
+                <label for="query" id="query-label">검색하고 싶은 내용을 자연어로 입력하세요 *</label>
+                <input type="text" id="query" name="query" required placeholder="예: 폐결절 CT 진단에서 AI 활용 최신 연구">
+                <div id="ai-query-result" class="ai-query-result" style="display: none;">
+                    <div class="ai-query-header">
+                        <span>🔍 AI 변환 결과</span>
+                        <button type="button" id="use-ai-query" class="btn btn-small">이 쿼리로 검색</button>
+                    </div>
+                    <div id="ai-query-content"></div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="author">저자명</label>
+                    <input type="text" id="author" name="author" placeholder="예: Kim">
+                </div>
+                <div class="form-group">
+                    <label for="start_date">시작 연도</label>
+                    <input type="text" id="start_date" name="start_date" placeholder="예: 2020">
+                </div>
+                <div class="form-group">
+                    <label for="end_date">종료 연도</label>
+                    <input type="text" id="end_date" name="end_date" placeholder="예: 2024">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">검색</button>
+                <button type="button" id="export-csv" class="btn btn-secondary" disabled>CSV 내보내기</button>
+                <button type="button" id="show-bookmarks" class="btn btn-bookmark">📑 북마크 (<span id="bookmark-count">0</span>)</button>
+                <button type="button" id="show-history" class="btn btn-secondary">🕒 검색 기록</button>
+            </div>
+        </form>
+
+        <!-- 검색 히스토리 -->
+        <div id="history-panel" class="history-panel" style="display: none;">
+            <div class="panel-header">
+                <h3>🕒 최근 검색 기록</h3>
+                <button type="button" id="clear-history" class="btn btn-small btn-danger">전체 삭제</button>
+            </div>
+            <div id="history-list" class="history-list"></div>
+        </div>
+    </section>
+
+    <section id="results-section" class="results-section" style="display: none;">
+        <div class="results-header">
+            <h2>검색 결과 (<span id="total-count">0</span>건)</h2>
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="papers">논문 목록</button>
+                <button class="tab-btn" data-tab="analysis">분석</button>
+            </div>
+        </div>
+
+        <div id="papers-tab" class="tab-content active">
+            <div class="action-bar">
+                <div class="action-buttons">
+                    <button id="summarize-selected" class="btn btn-ai" disabled>선택한 논문 AI 요약</button>
+                    <button id="chat-with-ai" class="btn btn-chat" disabled>💬 AI와 대화</button>
+                </div>
+                <label>
+                    <input type="checkbox" id="select-all"> 전체 선택
+                </label>
+            </div>
+            <div id="papers-list" class="papers-list"></div>
+            <div id="pagination" class="pagination"></div>
+        </div>
+
+        <div id="analysis-tab" class="tab-content">
+            <div class="analysis-grid">
+                <div class="chart-container">
+                    <h3>연도별 논문 수</h3>
+                    <canvas id="trends-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>상위 키워드</h3>
+                    <canvas id="keywords-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>상위 저자</h3>
+                    <div id="authors-list" class="stats-list"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="summary-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn" data-modal="summary">&times;</span>
+            <h2>AI 요약</h2>
+            <div id="summary-content" class="markdown-content"></div>
+        </div>
+    </div>
+
+    <div id="chat-modal" class="modal" style="display: none;">
+        <div class="modal-content chat-modal-content">
+            <span class="close-btn" data-modal="chat">&times;</span>
+            <h2>📚 논문 기반 AI 대화</h2>
+            <div class="chat-info">
+                선택된 논문: <strong id="chat-paper-count">0</strong>개
+            </div>
+            <div id="chat-messages" class="chat-messages"></div>
+            <div class="chat-input-area">
+                <textarea id="chat-input" placeholder="논문에 대해 질문하세요... (예: 이 연구들의 공통점은?, 주요 방법론을 설명해줘)" rows="2"></textarea>
+                <button id="chat-send" class="btn btn-ai">전송</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 북마크 모달 -->
+    <div id="bookmarks-modal" class="modal" style="display: none;">
+        <div class="modal-content bookmarks-modal-content">
+            <span class="close-btn" data-modal="bookmarks">&times;</span>
+            <h2>📑 북마크된 논문</h2>
+            <div class="bookmark-actions">
+                <button id="export-bookmarks" class="btn btn-secondary">CSV 내보내기</button>
+                <button id="summarize-bookmarks" class="btn btn-ai">전체 AI 요약</button>
+                <button id="clear-bookmarks" class="btn btn-danger">전체 삭제</button>
+            </div>
+            <div id="bookmarks-list" class="papers-list"></div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>처리 중...</p>
+    </div>
+</div>
+{% endblock %}
