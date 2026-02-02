@@ -26,3 +26,7 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Local documentation (for Claude Code context)
+history.md
+idea.md
